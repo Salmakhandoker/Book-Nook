@@ -15,7 +15,7 @@ export const metadata = {
     "Study Room Booking",
     "Library Booking",
     "StudyNook",
-    "Next.js Project",
+    "Next.js",
     "Room Reservation",
     "Student Workspace",
   ],
@@ -41,7 +41,13 @@ export default function RootLayout({ children }) {
       suppressHydrationWarning
     >
       <body className="bg-[#0f1412] text-[#dfe4e0] antialiased">
-        {/* Toast Notifications */}
+
+        {/* APP CONTENT */}
+        <main>
+          {children}
+        </main>
+
+        {/* TOAST */}
         <Toaster
           position="top-center"
           toastOptions={{
@@ -50,7 +56,8 @@ export default function RootLayout({ children }) {
             style: {
               background: "#1c211e",
               color: "#dfe4e0",
-              border: "1px solid rgba(255, 193, 7, 0.2)",
+              border:
+                "1px solid rgba(255, 193, 7, 0.2)",
               padding: "16px",
               borderRadius: "14px",
             },
@@ -71,8 +78,6 @@ export default function RootLayout({ children }) {
           }}
         />
 
-        {/* App Content */}
-        <main>{children}</main>
       </body>
     </html>
   );
