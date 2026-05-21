@@ -389,6 +389,33 @@ export default function RoomDetailsPage() {
       </div>
 
       <Footer />
+      {/* {
+        showEditModal && (
+          <EditRoomModal
+            room={room}
+            onClose={() =>
+              setShowEditModal(false)
+            }
+            onUpdated={fetchRoom}
+          />
+        )
+      } */}
+
+      {/* DELETE MODAL */}
+      {/* {
+        showDeleteModal && (
+          <DeleteConfirmModal
+            roomId={room._id}
+            onClose={() =>
+              setShowDeleteModal(false)
+            }
+            onDeleted={() =>
+              router.push("/rooms")
+            }
+          />
+        )
+      } */}
+
     </div>
   );
 }
