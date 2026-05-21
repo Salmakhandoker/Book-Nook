@@ -27,12 +27,13 @@ export default function RoomDetailsPage() {
   const [endTime, setEndTime] = useState("11");
   const [note, setNote] = useState("");
 
-  const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingLoading, setBookingLoading] =
+    useState(false);
 
   /*
-  |--------------------------------------------------------------------------
+  |------------------------------------------------------------------
   | FETCH ROOM
-  |--------------------------------------------------------------------------
+  |------------------------------------------------------------------
   */
 
   useEffect(() => {
@@ -46,9 +47,15 @@ export default function RoomDetailsPage() {
 
         const data = await res.json();
 
+        if (!res.ok) {
+          throw new Error(
+            data.message || "Failed to load room"
+          );
+        }
+
         setRoom(data);
       } catch (error) {
-        toast.error("Failed to load room");
+        toast.error(error.message);
       } finally {
         setLoading(false);
       }
@@ -58,9 +65,9 @@ export default function RoomDetailsPage() {
   }, [id]);
 
   /*
-  |--------------------------------------------------------------------------
+  |------------------------------------------------------------------
   | TOTAL COST
-  |--------------------------------------------------------------------------
+  |------------------------------------------------------------------
   */
 
   const totalCost = useMemo(() => {
@@ -74,17 +81,31 @@ export default function RoomDetailsPage() {
   }, [startTime, endTime, room]);
 
   /*
-  |--------------------------------------------------------------------------
+  |------------------------------------------------------------------
   | BOOK ROOM
-  |--------------------------------------------------------------------------
+  |------------------------------------------------------------------
   */
 
   const handleBooking = async () => {
-    if (!date) {
-      return toast.error("Please select booking date");
+    // LOGIN CHECK
+    const user = JSON.parse(
+      localStorage.getItem("user")
+    );
+
+    if (!user) {
+      return toast.error("Please login first");
     }
 
-    if (Number(endTime) <= Number(startTime)) {
+    // VALIDATION
+    if (!date) {
+      return toast.error(
+        "Please select booking date"
+      );
+    }
+
+    if (
+      Number(endTime) <= Number(startTime)
+    ) {
       return toast.error("Invalid time slot");
     }
 
@@ -96,6 +117,9 @@ export default function RoomDetailsPage() {
         roomName: room.roomName,
         roomImage: room.image,
         hourlyRate: room.hourlyRate,
+
+        userEmail: user.email,
+
         date,
         startTime,
         endTime,
@@ -108,26 +132,41 @@ export default function RoomDetailsPage() {
         {
           method: "POST",
 
-          credentials: "include",
-
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
 
-          body: JSON.stringify(bookingData),
+          body: JSON.stringify(
+            bookingData
+          ),
         }
       );
 
       const data = await res.json();
 
-      if (!data.success) {
-        return toast.error(data.message);
+      if (!res.ok || !data.success) {
+        return toast.error(
+          data.message || "Booking failed"
+        );
       }
 
-      toast.success("Room booked successfully!");
+      toast.success(
+        "Room booked successfully!"
+      );
 
+      // RESET FORM
+      setDate("");
       setNote("");
+      setStartTime("09");
+      setEndTime("11");
 
+      // UPDATE BOOKING COUNT UI
+      setRoom((prev) => ({
+        ...prev,
+        bookingCount:
+          (prev.bookingCount || 0) + 1,
+      }));
     } catch (error) {
       toast.error("Booking failed");
     } finally {
@@ -136,9 +175,9 @@ export default function RoomDetailsPage() {
   };
 
   /*
-  |--------------------------------------------------------------------------
+  |------------------------------------------------------------------
   | LOADING
-  |--------------------------------------------------------------------------
+  |------------------------------------------------------------------
   */
 
   if (loading) {
@@ -150,9 +189,23 @@ export default function RoomDetailsPage() {
   }
 
   /*
-  |--------------------------------------------------------------------------
+  |------------------------------------------------------------------
+  | ROOM NOT FOUND
+  |------------------------------------------------------------------
+  */
+
+  if (!room) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#121416] text-white text-2xl">
+        Room not found
+      </div>
+    );
+  }
+
+  /*
+  |------------------------------------------------------------------
   | PAGE
-  |--------------------------------------------------------------------------
+  |------------------------------------------------------------------
   */
 
   return (
@@ -180,12 +233,20 @@ export default function RoomDetailsPage() {
             </h1>
 
             <div className="flex flex-wrap gap-6 text-gray-300">
-              <p>📍 {room.floor}</p>
-
-              <p>👥 {room.capacity} People</p>
+              <p>
+                📍{" "}
+                {room.floor ||
+                  "Floor not specified"}
+              </p>
 
               <p>
-                📚 {room.bookingCount || 0} Bookings
+                👥{" "}
+                {room.capacity || 0} People
+              </p>
+
+              <p>
+                📚{" "}
+                {room.bookingCount || 0} Bookings
               </p>
             </div>
           </div>
@@ -203,7 +264,8 @@ export default function RoomDetailsPage() {
             </h2>
 
             <p className="text-lg text-gray-300 leading-8">
-              {room.description}
+              {room.description ||
+                "No description available"}
             </p>
           </section>
 
@@ -215,33 +277,38 @@ export default function RoomDetailsPage() {
               </h2>
 
               <span className="text-sm text-gray-400 uppercase tracking-widest">
-                {room.amenities?.length || 0} Features
+                {room.amenities?.length || 0}{" "}
+                Features
               </span>
             </div>
 
             <div className="grid sm:grid-cols-2 gap-5">
-              {room.amenities?.map((item, index) => (
-                <div
-                  key={index}
-                  className="bg-[#1e2022] border border-[#333537] rounded-2xl p-5 hover:border-yellow-400/40 transition-all"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-xl bg-[#2a2d30] flex items-center justify-center text-2xl">
-                      {amenitiesIcons[item] || "📚"}
-                    </div>
+              {room.amenities?.map(
+                (item, index) => (
+                  <div
+                    key={index}
+                    className="bg-[#1e2022] border border-[#333537] rounded-2xl p-5 hover:border-yellow-400/40 transition-all"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 rounded-xl bg-[#2a2d30] flex items-center justify-center text-2xl">
+                        {amenitiesIcons[item] ||
+                          "📚"}
+                      </div>
 
-                    <div>
-                      <h4 className="font-semibold text-lg">
-                        {item}
-                      </h4>
+                      <div>
+                        <h4 className="font-semibold text-lg">
+                          {item}
+                        </h4>
 
-                      <p className="text-sm text-gray-400">
-                        Premium study experience
-                      </p>
+                        <p className="text-sm text-gray-400">
+                          Premium study
+                          experience
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                )
+              )}
             </div>
           </section>
 
@@ -249,7 +316,10 @@ export default function RoomDetailsPage() {
           <section className="bg-[#1e2022] border border-[#333537] rounded-3xl p-8">
             <div className="flex flex-col md:flex-row items-center gap-6">
               <img
-                src={room.ownerPhoto}
+                src={
+                  room.ownerPhoto ||
+                  "https://i.ibb.co/4pDNDk1/avatar.png"
+                }
                 alt={room.ownerName}
                 className="w-24 h-24 rounded-full object-cover border-4 border-[#333537]"
               />
@@ -260,14 +330,18 @@ export default function RoomDetailsPage() {
                 </p>
 
                 <h3 className="text-3xl font-bold mb-2">
-                  {room.ownerName}
+                  {room.ownerName ||
+                    "Unknown Owner"}
                 </h3>
 
                 <p className="text-gray-400">
-                  Dedicated to creating focused and productive study environments.
+                  Dedicated to creating
+                  focused and productive
+                  study environments.
                 </p>
               </div>
             </div>
+            
           </section>
         </div>
 
@@ -298,7 +372,9 @@ export default function RoomDetailsPage() {
                   }
                   value={date}
                   onChange={(e) =>
-                    setDate(e.target.value)
+                    setDate(
+                      e.target.value
+                    )
                   }
                   className="w-full bg-[#2a2d30] border border-[#444] rounded-xl p-4 outline-none focus:border-yellow-400"
                 />
@@ -308,7 +384,9 @@ export default function RoomDetailsPage() {
                   <select
                     value={startTime}
                     onChange={(e) =>
-                      setStartTime(e.target.value)
+                      setStartTime(
+                        e.target.value
+                      )
                     }
                     className="bg-[#2a2d30] border border-[#444] rounded-xl p-4"
                   >
@@ -328,7 +406,9 @@ export default function RoomDetailsPage() {
                   <select
                     value={endTime}
                     onChange={(e) =>
-                      setEndTime(e.target.value)
+                      setEndTime(
+                        e.target.value
+                      )
                     }
                     className="bg-[#2a2d30] border border-[#444] rounded-xl p-4"
                   >
@@ -340,7 +420,10 @@ export default function RoomDetailsPage() {
                         key={hour}
                         value={hour}
                         disabled={
-                          hour <= Number(startTime)
+                          hour <=
+                          Number(
+                            startTime
+                          )
                         }
                       >
                         {hour}:00
@@ -354,7 +437,9 @@ export default function RoomDetailsPage() {
                   placeholder="Special note..."
                   value={note}
                   onChange={(e) =>
-                    setNote(e.target.value)
+                    setNote(
+                      e.target.value
+                    )
                   }
                   className="w-full bg-[#2a2d30] border border-[#444] rounded-xl p-4 h-28 resize-none"
                 />
@@ -373,22 +458,30 @@ export default function RoomDetailsPage() {
                 </div>
               </div>
 
+
               {/* BUTTON */}
               <button
                 onClick={handleBooking}
-                disabled={bookingLoading}
-                className="w-full mt-8 bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-4 rounded-2xl transition-all"
+                disabled={
+                  bookingLoading
+                }
+                className="w-full mt-8 bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-4 rounded-2xl transition-all disabled:opacity-50"
               >
                 {bookingLoading
                   ? "Processing..."
                   : "Secure This Space"}
               </button>
+
             </div>
           </div>
         </div>
       </div>
+      
 
       <Footer />
+    </div>
+  );
+}
       {/* {
         showEditModal && (
           <EditRoomModal
@@ -399,7 +492,7 @@ export default function RoomDetailsPage() {
             onUpdated={fetchRoom}
           />
         )
-      } */}
+      }
 
       {/* DELETE MODAL */}
       {/* {
@@ -414,8 +507,6 @@ export default function RoomDetailsPage() {
             }
           />
         )
-      } */}
+      } */} 
 
-    </div>
-  );
-}
+    
