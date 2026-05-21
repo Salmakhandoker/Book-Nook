@@ -1,5 +1,6 @@
 "use client";
 
+import { authClient } from "@/lib/auth-client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -66,9 +67,21 @@ export default function LoginPage() {
   };
 
   // GOOGLE LOGIN
-  const handleGoogleLogin = () => {
-    toast.success("Google Login Coming Soon");
-  };
+  // const handleGoogleLogin = async () => {
+  //   await authClient.logIn.social({
+  //     provider: "google"
+  //   })
+  // };
+  const handleGoogleLogin = async () => {
+  try {
+    await authClient.signIn.social({
+      provider: "google",
+      callbackURL: "/",
+    });
+  } catch (error) {
+    toast.error("Google login failed");
+  }
+};
 
   return (
     <div className="min-h-screen bg-[#0f1412] flex items-center justify-center px-4">
@@ -116,7 +129,7 @@ export default function LoginPage() {
           onClick={handleGoogleLogin}
           className="w-full mt-4 border border-yellow-500 text-yellow-400 py-3 rounded-lg"
         >
-          Continue with Google
+         signin with Google
         </button>
 
         {/* REGISTER */}

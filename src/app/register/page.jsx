@@ -169,7 +169,7 @@ export default function RegisterPage() {
           onClick={handleGoogleRegister}
           className="w-full mt-4 border border-yellow-500 text-yellow-400 py-3 rounded-lg"
         >
-          Continue with Google
+          signup with Google
         </button>
 
         {/* LOGIN */}

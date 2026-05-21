@@ -1,4 +1,5 @@
 import { MongoClient, ServerApiVersion } from 'mongodb';
+import { mongodbAdapter } from "better-auth/adapters/mongodb";
 
 const uri = process.env.MONGODB_URI;
 
