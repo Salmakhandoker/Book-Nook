@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
 export default function EditRoomModal({
@@ -8,93 +8,166 @@ export default function EditRoomModal({
   onClose,
   onUpdated,
 }) {
-  const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState(null);
+  const [loading, setLoading] =
+    useState(false);
 
-  // ✅ GET SESSION USER (SAFE WAY)
+  const [user, setUser] =
+    useState(null);
+
+  const [formData, setFormData] =
+    useState({
+      roomName:
+        room?.roomName || "",
+
+      image:
+        room?.image || "",
+
+      hourlyRate:
+        room?.hourlyRate || "",
+
+      description:
+        room?.description || "",
+
+      floor:
+        room?.floor || "",
+
+      capacity:
+        room?.capacity || "",
+
+      amenities:
+        room?.amenities?.join(
+          ", "
+        ) || "",
+    });
+
+  // GET USER
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/get-session`)
-      .then((res) => res.json())
-      .then((data) => setUser(data?.user || null))
-      .catch(() => setUser(null));
+    const storedUser =
+      localStorage.getItem("user");
+
+    if (storedUser) {
+      setUser(
+        JSON.parse(storedUser)
+      );
+    }
   }, []);
 
-  const [formData, setFormData] = useState({
-    roomName: room.roomName || "",
-    image: room.image || "",
-    hourlyRate: room.hourlyRate || "",
-    description: room.description || "",
-    floor: room.floor || "",
-    capacity: room.capacity || "",
-    amenities: room.amenities?.join(", ") || "",
-  });
-
+  // INPUT CHANGE
   const handleChange = (e) => {
     setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+
+      [e.target.name]:
+        e.target.value,
     }));
   };
 
-  const handleSubmit = async (e) => {
+  // UPDATE ROOM
+  const handleSubmit = async (
+    e
+  ) => {
     e.preventDefault();
 
     try {
       setLoading(true);
 
-      // ❌ NOT LOGGED IN
+      // LOGIN CHECK
       if (!user) {
-        return toast.error("Please login first");
+        toast.error(
+          "Please login first"
+        );
+
+        return;
       }
 
-      // ❌ NOT OWNER
-      if (user.email !== room.ownerEmail) {
-        return toast.error("You are not allowed");
+      // OWNER CHECK
+      if (
+        user.email
+          .trim()
+          .toLowerCase() !==
+        room.ownerEmail
+          .trim()
+          .toLowerCase()
+      ) {
+        toast.error(
+          "You are not allowed"
+        );
+
+        return;
       }
 
       const updatedRoom = {
-        ownerEmail: user.email,
+        ownerEmail:
+          user.email,
 
-        roomName: formData.roomName,
-        image: formData.image,
-        floor: formData.floor,
-        description: formData.description,
+        roomName:
+          formData.roomName,
 
-        hourlyRate: Number(formData.hourlyRate),
-        capacity: Number(formData.capacity),
+        image:
+          formData.image,
 
-        amenities: formData.amenities
-          ? formData.amenities
-              .split(",")
-              .map((i) => i.trim())
-              .filter(Boolean)
-          : [],
+        description:
+          formData.description,
+
+        floor:
+          formData.floor,
+
+        hourlyRate:
+          Number(
+            formData.hourlyRate
+          ),
+
+        capacity:
+          Number(
+            formData.capacity
+          ),
+
+        amenities:
+          formData.amenities
+            .split(",")
+            .map((item) =>
+              item.trim()
+            )
+            .filter(Boolean),
       };
 
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/rooms/${room._id}`,
+        `http://localhost:5000/api/rooms/${room._id}`,
         {
           method: "PATCH",
+
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
-          body: JSON.stringify(updatedRoom),
+
+          body: JSON.stringify(
+            updatedRoom
+          ),
         }
       );
 
-      const data = await res.json();
+      const data =
+        await res.json();
 
-      if (!res.ok || !data.success) {
-        return toast.error(data.message || "Update failed");
+      if (!res.ok) {
+        throw new Error(
+          data.message ||
+            "Update failed"
+        );
       }
 
-      toast.success("Room updated successfully");
+      toast.success(
+        "Room updated successfully"
+      );
 
       onUpdated?.();
-      onClose();
+
+      onClose?.();
     } catch (error) {
-      console.log(error);
-      toast.error("Server error");
+      toast.error(
+        error.message
+      );
     } finally {
       setLoading(false);
     }
@@ -104,80 +177,129 @@ export default function EditRoomModal({
     <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
       <div className="w-full max-w-2xl bg-[#1c211e] rounded-2xl p-8">
 
-        <div className="flex justify-between mb-6">
+        <div className="flex justify-between items-center mb-6">
+
           <h2 className="text-2xl font-bold text-white">
             Edit Room
           </h2>
 
-          <button onClick={onClose} className="text-white">
+          <button
+            onClick={onClose}
+            className="text-white text-xl"
+          >
             ✕
           </button>
+
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form
+          onSubmit={
+            handleSubmit
+          }
+          className="space-y-4"
+        >
 
           <input
+            type="text"
             name="roomName"
-            value={formData.roomName}
-            onChange={handleChange}
+            placeholder="Room Name"
+            value={
+              formData.roomName
+            }
+            onChange={
+              handleChange
+            }
             className="w-full p-3 rounded bg-gray-800 text-white"
           />
 
           <input
+            type="text"
             name="image"
-            value={formData.image}
-            onChange={handleChange}
+            placeholder="Image URL"
+            value={
+              formData.image
+            }
+            onChange={
+              handleChange
+            }
             className="w-full p-3 rounded bg-gray-800 text-white"
           />
 
           <div className="grid grid-cols-2 gap-4">
 
             <input
-              name="hourlyRate"
               type="number"
-              value={formData.hourlyRate}
-              onChange={handleChange}
+              name="hourlyRate"
+              placeholder="Hourly Rate"
+              value={
+                formData.hourlyRate
+              }
+              onChange={
+                handleChange
+              }
               className="w-full p-3 rounded bg-gray-800 text-white"
             />
 
             <input
-              name="capacity"
               type="number"
-              value={formData.capacity}
-              onChange={handleChange}
+              name="capacity"
+              placeholder="Capacity"
+              value={
+                formData.capacity
+              }
+              onChange={
+                handleChange
+              }
               className="w-full p-3 rounded bg-gray-800 text-white"
             />
 
           </div>
 
           <input
+            type="text"
             name="floor"
-            value={formData.floor}
-            onChange={handleChange}
+            placeholder="Floor"
+            value={
+              formData.floor
+            }
+            onChange={
+              handleChange
+            }
             className="w-full p-3 rounded bg-gray-800 text-white"
           />
 
           <input
+            type="text"
             name="amenities"
-            value={formData.amenities}
-            onChange={handleChange}
+            placeholder="Wi-Fi, AC"
+            value={
+              formData.amenities
+            }
+            onChange={
+              handleChange
+            }
             className="w-full p-3 rounded bg-gray-800 text-white"
           />
 
           <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
             rows={5}
+            name="description"
+            placeholder="Description"
+            value={
+              formData.description
+            }
+            onChange={
+              handleChange
+            }
             className="w-full p-3 rounded bg-gray-800 text-white"
           />
 
-          <div className="flex gap-4 pt-4">
+          <div className="grid grid-cols-2 gap-4 pt-4">
 
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 rounded border text-white"
+              className="py-3 rounded border border-gray-600 text-white"
             >
               Cancel
             </button>
@@ -185,9 +307,11 @@ export default function EditRoomModal({
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 py-3 rounded bg-yellow-400 font-bold"
+              className="py-3 rounded bg-yellow-400 text-black font-bold"
             >
-              {loading ? "Updating..." : "Update"}
+              {loading
+                ? "Updating..."
+                : "Update"}
             </button>
 
           </div>

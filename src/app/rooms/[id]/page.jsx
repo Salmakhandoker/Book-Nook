@@ -126,17 +126,38 @@ export default function RoomDetailsPage() {
   ==========================================
   */
 
-  // 
- const isOwner = useMemo(() => {
-  if (!currentUser || !room) return false;
-  if (!currentUser.email || !room.ownerEmail) return false;
+  const isOwner = useMemo(() => {
+    if (!currentUser)
+      return false;
 
-  return (
-    currentUser.email.trim().toLowerCase() ===
-    room.ownerEmail.trim().toLowerCase()
-  );
-}, [currentUser, room]);
+    if (!room)
+      return false;
 
+    if (
+      !currentUser.email
+    )
+      return false;
+
+    if (
+      !room.ownerEmail
+    )
+      return false;
+
+    return (
+      currentUser.email
+        .trim()
+        .toLowerCase() ===
+      room.ownerEmail
+        .trim()
+        .toLowerCase()
+    );
+  }, [currentUser, room]);
+
+  /*
+  ==========================================
+  TOTAL COST
+  ==========================================
+  */
 
   const totalCost = useMemo(() => {
     if (!room) return 0;
@@ -250,12 +271,15 @@ export default function RoomDetailsPage() {
       // UPDATE COUNT
       setRoom((prev) => ({
         ...prev,
+
         bookingCount:
-          (prev.bookingCount || 0) + 1,
+          (prev.bookingCount || 0) +
+          1,
       }));
 
-      // GO BOOKINGS PAGE
-      router.push("/my-bookings");
+      router.push(
+        "/my-bookings"
+      );
     } catch (error) {
       toast.error(error.message);
     } finally {
@@ -293,10 +317,12 @@ export default function RoomDetailsPage() {
 
   return (
     <div className="min-h-screen bg-[#121416] text-white">
+
       <Navbar />
 
       {/* HERO */}
       <section className="relative h-[70vh] min-h-[500px] overflow-hidden mt-20">
+
         <img
           src={room.image}
           alt={room.roomName}
@@ -304,11 +330,15 @@ export default function RoomDetailsPage() {
         />
 
         <div className="absolute inset-0 bg-gradient-to-t from-[#121416] via-[#121416aa] to-transparent flex items-end">
+
           <div className="max-w-7xl mx-auto w-full px-6 pb-16">
+
             <div className="inline-flex items-center gap-2 bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 px-4 py-2 rounded-full mb-6">
+
               <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></span>
 
               Available Today
+
             </div>
 
             <h1 className="text-5xl md:text-6xl font-bold mb-5">
@@ -316,30 +346,30 @@ export default function RoomDetailsPage() {
             </h1>
 
             <div className="flex flex-wrap gap-6 text-gray-300">
+
               <p>
-                📍{" "}
-                {room.floor}
+                📍 {room.floor}
               </p>
 
               <p>
-                👥{" "}
-                {room.capacity}{" "}
-                People
+                👥 {room.capacity} People
               </p>
 
               <p>
-                📚{" "}
-                {room.bookingCount || 0}{" "}
-                Bookings
+                📚 {room.bookingCount || 0} Bookings
               </p>
+
             </div>
 
             {/* OWNER BUTTONS */}
             {isOwner && (
               <div className="flex gap-4 mt-8">
+
                 <button
                   onClick={() =>
-                    setShowEditModal(true)
+                    setShowEditModal(
+                      true
+                    )
                   }
                   className="bg-yellow-400 hover:bg-yellow-300 text-black font-bold px-6 py-3 rounded-xl transition"
                 >
@@ -348,24 +378,33 @@ export default function RoomDetailsPage() {
 
                 <button
                   onClick={() =>
-                    setShowDeleteModal(true)
+                    setShowDeleteModal(
+                      true
+                    )
                   }
                   className="bg-red-500 hover:bg-red-400 text-white font-bold px-6 py-3 rounded-xl transition"
                 >
                   Delete Room
                 </button>
+
               </div>
             )}
+
           </div>
+
         </div>
+
       </section>
 
       {/* MAIN */}
       <div className="max-w-7xl mx-auto px-6 py-16 grid lg:grid-cols-12 gap-14">
+
         {/* LEFT */}
         <div className="lg:col-span-8 space-y-16">
+
           {/* DESCRIPTION */}
           <section>
+
             <h2 className="text-3xl font-bold text-yellow-400 mb-6">
               Room Description
             </h2>
@@ -373,37 +412,47 @@ export default function RoomDetailsPage() {
             <p className="text-lg text-gray-300 leading-8">
               {room.description}
             </p>
+
           </section>
 
           {/* AMENITIES */}
           <section>
+
             <div className="flex items-center justify-between mb-8">
+
               <h2 className="text-3xl font-bold text-yellow-400">
                 Amenities
               </h2>
 
               <span className="text-sm text-gray-400 uppercase tracking-widest">
-                {room.amenities
-                  ?.length || 0}{" "}
+                {room.amenities?.length ||
+                  0}{" "}
                 Features
               </span>
+
             </div>
 
             <div className="grid sm:grid-cols-2 gap-5">
+
               {room.amenities?.map(
                 (item, index) => (
                   <div
                     key={index}
                     className="bg-[#1e2022] border border-[#333537] rounded-2xl p-5"
                   >
+
                     <div className="flex items-center gap-4">
+
                       <div className="w-14 h-14 rounded-xl bg-[#2a2d30] flex items-center justify-center text-2xl">
+
                         {amenitiesIcons[
                           item
                         ] || "📚"}
+
                       </div>
 
                       <div>
+
                         <h4 className="font-semibold text-lg">
                           {item}
                         </h4>
@@ -413,56 +462,33 @@ export default function RoomDetailsPage() {
                           study
                           experience
                         </p>
+
                       </div>
+
                     </div>
+
                   </div>
                 )
               )}
+
             </div>
+
           </section>
 
-          {/* OWNER */}
-          <section className="bg-[#1e2022] border border-[#333537] rounded-3xl p-8">
-            <div className="flex flex-col md:flex-row items-center gap-6">
-              <img
-                src={
-                  room.ownerPhoto ||
-                  "https://i.ibb.co/4pDNDk1/avatar.png"
-                }
-                alt={
-                  room.ownerName
-                }
-                className="w-24 h-24 rounded-full object-cover border-4 border-[#333537]"
-              />
-
-              <div className="flex-1 text-center md:text-left">
-                <p className="uppercase tracking-[4px] text-yellow-400 text-sm mb-2">
-                  Listed By
-                </p>
-
-                <h3 className="text-3xl font-bold mb-2">
-                  {room.ownerName}
-                </h3>
-
-                <p className="text-gray-400">
-                  Dedicated to
-                  creating focused
-                  and productive
-                  study
-                  environments.
-                </p>
-              </div>
-            </div>
-          </section>
         </div>
 
         {/* BOOKING CARD */}
         <div className="lg:col-span-4">
+
           <div className="sticky top-28 bg-[#1a1c1e] border border-[#333537] rounded-3xl overflow-hidden">
+
             <div className="p-8">
+
               {/* PRICE */}
               <div className="mb-8">
+
                 <h2 className="text-5xl font-bold text-yellow-400">
+
                   $
                   {room.hourlyRate}
 
@@ -470,11 +496,14 @@ export default function RoomDetailsPage() {
                     {" "}
                     /hour
                   </span>
+
                 </h2>
+
               </div>
 
               {/* FORM */}
               <div className="space-y-5">
+
                 {/* DATE */}
                 <input
                   type="date"
@@ -496,6 +525,7 @@ export default function RoomDetailsPage() {
 
                 {/* TIME */}
                 <div className="grid grid-cols-2 gap-4">
+
                   {/* START */}
                   <select
                     value={startTime}
@@ -507,6 +537,7 @@ export default function RoomDetailsPage() {
                     }
                     className="bg-[#2a2d30] border border-[#444] rounded-xl p-4"
                   >
+
                     {Array.from(
                       {
                         length: 13,
@@ -528,6 +559,7 @@ export default function RoomDetailsPage() {
                         </option>
                       )
                     )}
+
                   </select>
 
                   {/* END */}
@@ -541,6 +573,7 @@ export default function RoomDetailsPage() {
                     }
                     className="bg-[#2a2d30] border border-[#444] rounded-xl p-4"
                   >
+
                     {Array.from(
                       {
                         length: 13,
@@ -570,7 +603,9 @@ export default function RoomDetailsPage() {
                         </option>
                       )
                     )}
+
                   </select>
+
                 </div>
 
                 {/* NOTE */}
@@ -584,20 +619,27 @@ export default function RoomDetailsPage() {
                   }
                   className="w-full bg-[#2a2d30] border border-[#444] rounded-xl p-4 h-28 resize-none"
                 />
+
               </div>
 
               {/* TOTAL */}
               <div className="mt-8 border-t border-[#333] pt-6">
+
                 <div className="flex justify-between items-center">
+
                   <p className="text-gray-400">
                     Total Cost
                   </p>
 
                   <h3 className="text-3xl font-bold text-yellow-400">
+
                     $
                     {totalCost}
+
                   </h3>
+
                 </div>
+
               </div>
 
               {/* BOOK BUTTON */}
@@ -610,15 +652,21 @@ export default function RoomDetailsPage() {
                 }
                 className="w-full mt-8 bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-4 rounded-2xl transition disabled:opacity-50"
               >
+
                 {currentUser
                   ? bookingLoading
                     ? "Processing..."
                     : "Book Now"
                   : "Login to Book"}
+
               </button>
+
             </div>
+
           </div>
+
         </div>
+
       </div>
 
       {/* EDIT MODAL */}
@@ -638,20 +686,22 @@ export default function RoomDetailsPage() {
       {showDeleteModal && (
         <DeleteConfirmModal
           roomId={room._id}
+          roomOwnerEmail={
+            room.ownerEmail
+          }
           onClose={() =>
             setShowDeleteModal(
               false
             )
           }
           onDeleted={() =>
-            router.push(
-              "/rooms"
-            )
+            router.push("/rooms")
           }
         />
       )}
 
       <Footer />
+
     </div>
   );
 }

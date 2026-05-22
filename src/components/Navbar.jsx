@@ -7,27 +7,41 @@ import toast from "react-hot-toast";
 
 export default function Navbar() {
   const router = useRouter();
-
   const [user, setUser] = useState(null);
 
-  // LOAD USER
+  // ✅ LOAD USER
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
+    const loadUser = () => {
+      const storedUser = localStorage.getItem("user");
+      setUser(storedUser ? JSON.parse(storedUser) : null);
+    };
 
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    loadUser();
+
+    // 🔥 listen for changes (important fix)
+    window.addEventListener("storage", loadUser);
+
+    return () => window.removeEventListener("storage", loadUser);
   }, []);
 
-  // LOGOUT
-  const handleLogout = () => {
-    localStorage.removeItem("user");
+  // ✅ LOGOUT FIXED
+  const handleLogout = async () => {
+    try {
+      // optional if using backend auth
+      await fetch("/api/auth/sign-out", {
+        method: "POST",
+      }).catch(() => {});
 
-    setUser(null);
+      localStorage.removeItem("user");
+      setUser(null);
 
-    toast.success("Logged out successfully");
+      toast.success("Logged out successfully");
 
-    router.push("/login");
+      // ✅ go HOME (your requirement)
+      router.push("/home");
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   return (
@@ -37,48 +51,16 @@ export default function Navbar() {
 
         {/* LOGO */}
         <Link href="/" className="flex items-center gap-2">
-
-          <span className="text-yellow-400 text-2xl">
-            📚
-          </span>
-
-          <h1 className="text-2xl font-bold text-yellow-400">
-            StudyNook
-          </h1>
-
+          <span className="text-yellow-400 text-2xl">📚</span>
+          <h1 className="text-2xl font-bold text-yellow-400">StudyNook</h1>
         </Link>
 
         {/* MENU */}
         <div className="hidden md:flex items-center gap-8">
-
-          <Link
-            href="/"
-            className="hover:text-yellow-400 transition"
-          >
-            Home
-          </Link>
-
-          <Link
-            href="/rooms"
-            className="hover:text-yellow-400 transition"
-          >
-            Rooms
-          </Link>
-
-          <Link
-            href="/add-room"
-            className="hover:text-yellow-400 transition"
-          >
-            Add Room
-          </Link>
-
-          <Link
-            href="/my-bookings"
-            className="hover:text-yellow-400 transition"
-          >
-            My Bookings
-          </Link>
-
+          <Link href="/">Home</Link>
+          <Link href="/rooms">Rooms</Link>
+          <Link href="/add-room">Add Room</Link>
+          <Link href="/my-bookings">My Bookings</Link>
         </div>
 
         {/* RIGHT SIDE */}
@@ -86,19 +68,16 @@ export default function Navbar() {
 
           {user ? (
             <>
-              {/* USER IMAGE */}
               <img
                 src={user.photo}
                 alt={user.name}
                 className="w-10 h-10 rounded-full object-cover border-2 border-yellow-400"
               />
 
-              {/* USER NAME */}
               <span className="hidden md:block text-sm text-gray-300">
                 {user.name}
               </span>
 
-              {/* LOGOUT */}
               <button
                 onClick={handleLogout}
                 className="bg-red-500 hover:bg-red-400 text-white px-5 py-2 rounded-lg font-semibold transition"
@@ -108,30 +87,22 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              {/* LOGIN */}
               <Link href="/login">
-
-                <button className="bg-yellow-500 hover:bg-yellow-400 text-black px-5 py-2 rounded-lg font-semibold transition">
+                <button className="bg-yellow-500 text-black px-5 py-2 rounded-lg">
                   Login
                 </button>
-
               </Link>
 
-              {/* REGISTER */}
               <Link href="/register">
-
-                <button className="border border-yellow-500 text-yellow-400 px-5 py-2 rounded-lg hover:bg-yellow-500/10 transition">
+                <button className="border border-yellow-500 text-yellow-400 px-5 py-2 rounded-lg">
                   Register
                 </button>
-
               </Link>
             </>
           )}
 
         </div>
-
       </nav>
-
     </header>
   );
 }

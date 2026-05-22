@@ -12,6 +12,7 @@
     "axios": "^1.16.1",
     "bcryptjs": "^3.0.3",
     "better-auth": "^1.6.11",
+    "cookie-parser": "^1.4.7",
     "framer-motion": "^12.38.0",
     "jsonwebtoken": "^9.0.3",
     "mongodb": "^7.2.0",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
 export default function DeleteConfirmModal({
@@ -9,49 +9,61 @@ export default function DeleteConfirmModal({
   onClose,
   onDeleted,
 }) {
-  const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState(null);
+  const [loading, setLoading] =
+    useState(false);
 
-  // ✅ GET SESSION USER (SAFE WAY)
+  const [user, setUser] =
+    useState(null);
+
+  // GET USER
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/auth/get-session`
-        );
+    const storedUser =
+      localStorage.getItem("user");
 
-        const data = await res.json();
-        setUser(data?.user || null);
-      } catch (err) {
-        console.log(err);
-        setUser(null);
-      }
-    };
-
-    fetchUser();
+    if (storedUser) {
+      setUser(
+        JSON.parse(storedUser)
+      );
+    }
   }, []);
 
   const handleDelete = async () => {
     try {
       setLoading(true);
 
-      // ❌ NOT LOGGED IN
+      // NOT LOGIN
       if (!user) {
-        return toast.error("Please login first");
+        toast.error(
+          "Please login first"
+        );
+        return;
       }
 
-      // ❌ NOT OWNER
-      if (user.email !== roomOwnerEmail) {
-        return toast.error("You are not allowed");
+      // OWNER CHECK
+      if (
+        user.email
+          .trim()
+          .toLowerCase() !==
+        roomOwnerEmail
+          .trim()
+          .toLowerCase()
+      ) {
+        toast.error(
+          "You are not allowed"
+        );
+        return;
       }
 
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/rooms/${roomId}`,
+        `http://localhost:5000/api/rooms/${roomId}`,
         {
           method: "DELETE",
+
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
+
           body: JSON.stringify({
             userEmail: user.email,
           }),
@@ -60,17 +72,22 @@ export default function DeleteConfirmModal({
 
       const data = await res.json();
 
-      if (!res.ok || !data.success) {
-        return toast.error(data.message || "Delete failed");
+      if (!res.ok) {
+        throw new Error(
+          data.message ||
+            "Delete failed"
+        );
       }
 
-      toast.success("Room deleted successfully");
+      toast.success(
+        "Room deleted successfully"
+      );
 
       onDeleted?.();
-      onClose();
+
+      onClose?.();
     } catch (error) {
-      console.log(error);
-      toast.error("Server error");
+      toast.error(error.message);
     } finally {
       setLoading(false);
     }
@@ -80,7 +97,9 @@ export default function DeleteConfirmModal({
     <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-[#1c211e] rounded-2xl p-8 text-center">
 
-        <div className="text-5xl mb-4">🗑️</div>
+        <div className="text-5xl mb-4">
+          🗑️
+        </div>
 
         <h2 className="text-2xl font-bold text-white mb-2">
           Delete Room?
@@ -105,7 +124,9 @@ export default function DeleteConfirmModal({
             disabled={loading}
             className="py-3 rounded-xl bg-red-500 text-white font-bold"
           >
-            {loading ? "Deleting..." : "Delete"}
+            {loading
+              ? "Deleting..."
+              : "Delete"}
           </button>
 
         </div>
