@@ -1,11 +1,23 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import {
+  useParams,
+  useRouter,
+} from "next/navigation";
+
 import toast from "react-hot-toast";
 
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+
+import EditRoomModal from "@/components/modals/EditRoomModal";
+import DeleteConfirmModal from "@/components/modals/DeleteConfirmModal";
 
 const amenitiesIcons = {
   "Wi-Fi": "📶",
@@ -19,94 +31,164 @@ const amenitiesIcons = {
 export default function RoomDetailsPage() {
   const { id } = useParams();
 
-  const [room, setRoom] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
-  const [date, setDate] = useState("");
-  const [startTime, setStartTime] = useState("09");
-  const [endTime, setEndTime] = useState("11");
-  const [note, setNote] = useState("");
+  const [room, setRoom] =
+    useState(null);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [currentUser, setCurrentUser] =
+    useState(null);
+
+  const [showEditModal, setShowEditModal] =
+    useState(false);
+
+  const [
+    showDeleteModal,
+    setShowDeleteModal,
+  ] = useState(false);
+
+  // BOOKING STATES
+  const [date, setDate] =
+    useState("");
+
+  const [startTime, setStartTime] =
+    useState("09:00");
+
+  const [endTime, setEndTime] =
+    useState("11:00");
+
+  const [note, setNote] =
+    useState("");
 
   const [bookingLoading, setBookingLoading] =
     useState(false);
 
   /*
-  |------------------------------------------------------------------
-  | FETCH ROOM
-  |------------------------------------------------------------------
+  ==========================================
+  GET USER
+  ==========================================
   */
 
   useEffect(() => {
-    if (!id) return;
+    const storedUser =
+      localStorage.getItem("user");
 
-    const fetchRoom = async () => {
-      try {
-        const res = await fetch(
-          `http://localhost:5000/api/rooms/${id}`
+    if (storedUser) {
+      setCurrentUser(
+        JSON.parse(storedUser)
+      );
+    }
+  }, []);
+
+  /*
+  ==========================================
+  FETCH ROOM
+  ==========================================
+  */
+
+  const fetchRoom = async () => {
+    try {
+      setLoading(true);
+
+      const res = await fetch(
+        `http://localhost:5000/api/rooms/${id}`
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(
+          data.message ||
+            "Failed to load room"
         );
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(
-            data.message || "Failed to load room"
-          );
-        }
-
-        setRoom(data);
-      } catch (error) {
-        toast.error(error.message);
-      } finally {
-        setLoading(false);
       }
-    };
 
-    fetchRoom();
+      setRoom(data);
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (id) {
+      fetchRoom();
+    }
   }, [id]);
 
   /*
-  |------------------------------------------------------------------
-  | TOTAL COST
-  |------------------------------------------------------------------
+  ==========================================
+  OWNER CHECK
+  ==========================================
+  */
+
+  const isOwner =
+    currentUser?.email?.toLowerCase() ===
+    room?.ownerEmail?.toLowerCase();
+
+  /*
+  ==========================================
+  TOTAL COST
+  ==========================================
   */
 
   const totalCost = useMemo(() => {
     if (!room) return 0;
 
+    const startHour = Number(
+      startTime.split(":")[0]
+    );
+
+    const endHour = Number(
+      endTime.split(":")[0]
+    );
+
     const total =
-      (Number(endTime) - Number(startTime)) *
+      (endHour - startHour) *
       room.hourlyRate;
 
     return total > 0 ? total : 0;
-  }, [startTime, endTime, room]);
+  }, [room, startTime, endTime]);
 
   /*
-  |------------------------------------------------------------------
-  | BOOK ROOM
-  |------------------------------------------------------------------
+  ==========================================
+  HANDLE BOOKING
+  ==========================================
   */
 
   const handleBooking = async () => {
-    // LOGIN CHECK
-    const user = JSON.parse(
-      localStorage.getItem("user")
-    );
+    if (!currentUser) {
+      toast.error(
+        "Please login first"
+      );
 
-    if (!user) {
-      return toast.error("Please login first");
+      router.push("/login");
+
+      return;
     }
 
-    // VALIDATION
     if (!date) {
       return toast.error(
         "Please select booking date"
       );
     }
 
-    if (
-      Number(endTime) <= Number(startTime)
-    ) {
-      return toast.error("Invalid time slot");
+    const startHour = Number(
+      startTime.split(":")[0]
+    );
+
+    const endHour = Number(
+      endTime.split(":")[0]
+    );
+
+    if (endHour <= startHour) {
+      return toast.error(
+        "Invalid time slot"
+      );
     }
 
     try {
@@ -114,17 +196,15 @@ export default function RoomDetailsPage() {
 
       const bookingData = {
         roomId: room._id,
-        roomName: room.roomName,
-        roomImage: room.image,
-        hourlyRate: room.hourlyRate,
-
-        userEmail: user.email,
 
         date,
         startTime,
         endTime,
+
         note,
-        totalCost,
+
+        userEmail:
+          currentUser.email,
       };
 
       const res = await fetch(
@@ -145,9 +225,10 @@ export default function RoomDetailsPage() {
 
       const data = await res.json();
 
-      if (!res.ok || !data.success) {
-        return toast.error(
-          data.message || "Booking failed"
+      if (!res.ok) {
+        throw new Error(
+          data.message ||
+            "Booking failed"
         );
       }
 
@@ -155,29 +236,35 @@ export default function RoomDetailsPage() {
         "Room booked successfully!"
       );
 
-      // RESET FORM
+      // RESET
       setDate("");
-      setNote("");
-      setStartTime("09");
-      setEndTime("11");
 
-      // UPDATE BOOKING COUNT UI
+      setStartTime("09:00");
+
+      setEndTime("11:00");
+
+      setNote("");
+
+      // UPDATE COUNT
       setRoom((prev) => ({
         ...prev,
         bookingCount:
           (prev.bookingCount || 0) + 1,
       }));
+
+      // GO BOOKINGS PAGE
+      router.push("/my-bookings");
     } catch (error) {
-      toast.error("Booking failed");
+      toast.error(error.message);
     } finally {
       setBookingLoading(false);
     }
   };
 
   /*
-  |------------------------------------------------------------------
-  | LOADING
-  |------------------------------------------------------------------
+  ==========================================
+  LOADING
+  ==========================================
   */
 
   if (loading) {
@@ -189,9 +276,9 @@ export default function RoomDetailsPage() {
   }
 
   /*
-  |------------------------------------------------------------------
-  | ROOM NOT FOUND
-  |------------------------------------------------------------------
+  ==========================================
+  ROOM NOT FOUND
+  ==========================================
   */
 
   if (!room) {
@@ -202,14 +289,8 @@ export default function RoomDetailsPage() {
     );
   }
 
-  /*
-  |------------------------------------------------------------------
-  | PAGE
-  |------------------------------------------------------------------
-  */
-
   return (
-    <div className="min-h-screen bg-[#121416] text-[#e2e2e5]">
+    <div className="min-h-screen bg-[#121416] text-white">
       <Navbar />
 
       {/* HERO */}
@@ -235,37 +316,60 @@ export default function RoomDetailsPage() {
             <div className="flex flex-wrap gap-6 text-gray-300">
               <p>
                 📍{" "}
-                {room.floor ||
-                  "Floor not specified"}
+                {room.floor}
               </p>
 
               <p>
                 👥{" "}
-                {room.capacity || 0} People
+                {room.capacity}{" "}
+                People
               </p>
 
               <p>
                 📚{" "}
-                {room.bookingCount || 0} Bookings
+                {room.bookingCount || 0}{" "}
+                Bookings
               </p>
             </div>
+
+            {/* OWNER BUTTONS */}
+            {isOwner && (
+              <div className="flex gap-4 mt-8">
+                <button
+                  onClick={() =>
+                    setShowEditModal(true)
+                  }
+                  className="bg-yellow-400 hover:bg-yellow-300 text-black font-bold px-6 py-3 rounded-xl transition"
+                >
+                  Edit Room
+                </button>
+
+                <button
+                  onClick={() =>
+                    setShowDeleteModal(true)
+                  }
+                  className="bg-red-500 hover:bg-red-400 text-white font-bold px-6 py-3 rounded-xl transition"
+                >
+                  Delete Room
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </section>
 
-      {/* CONTENT */}
+      {/* MAIN */}
       <div className="max-w-7xl mx-auto px-6 py-16 grid lg:grid-cols-12 gap-14">
         {/* LEFT */}
         <div className="lg:col-span-8 space-y-16">
           {/* DESCRIPTION */}
           <section>
             <h2 className="text-3xl font-bold text-yellow-400 mb-6">
-              Room Narrative
+              Room Description
             </h2>
 
             <p className="text-lg text-gray-300 leading-8">
-              {room.description ||
-                "No description available"}
+              {room.description}
             </p>
           </section>
 
@@ -273,11 +377,12 @@ export default function RoomDetailsPage() {
           <section>
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-3xl font-bold text-yellow-400">
-                Academic Essentials
+                Amenities
               </h2>
 
               <span className="text-sm text-gray-400 uppercase tracking-widest">
-                {room.amenities?.length || 0}{" "}
+                {room.amenities
+                  ?.length || 0}{" "}
                 Features
               </span>
             </div>
@@ -287,12 +392,13 @@ export default function RoomDetailsPage() {
                 (item, index) => (
                   <div
                     key={index}
-                    className="bg-[#1e2022] border border-[#333537] rounded-2xl p-5 hover:border-yellow-400/40 transition-all"
+                    className="bg-[#1e2022] border border-[#333537] rounded-2xl p-5"
                   >
                     <div className="flex items-center gap-4">
                       <div className="w-14 h-14 rounded-xl bg-[#2a2d30] flex items-center justify-center text-2xl">
-                        {amenitiesIcons[item] ||
-                          "📚"}
+                        {amenitiesIcons[
+                          item
+                        ] || "📚"}
                       </div>
 
                       <div>
@@ -301,7 +407,8 @@ export default function RoomDetailsPage() {
                         </h4>
 
                         <p className="text-sm text-gray-400">
-                          Premium study
+                          Premium
+                          study
                           experience
                         </p>
                       </div>
@@ -320,7 +427,9 @@ export default function RoomDetailsPage() {
                   room.ownerPhoto ||
                   "https://i.ibb.co/4pDNDk1/avatar.png"
                 }
-                alt={room.ownerName}
+                alt={
+                  room.ownerName
+                }
                 className="w-24 h-24 rounded-full object-cover border-4 border-[#333537]"
               />
 
@@ -330,18 +439,18 @@ export default function RoomDetailsPage() {
                 </p>
 
                 <h3 className="text-3xl font-bold mb-2">
-                  {room.ownerName ||
-                    "Unknown Owner"}
+                  {room.ownerName}
                 </h3>
 
                 <p className="text-gray-400">
-                  Dedicated to creating
-                  focused and productive
-                  study environments.
+                  Dedicated to
+                  creating focused
+                  and productive
+                  study
+                  environments.
                 </p>
               </div>
             </div>
-            
           </section>
         </div>
 
@@ -352,7 +461,8 @@ export default function RoomDetailsPage() {
               {/* PRICE */}
               <div className="mb-8">
                 <h2 className="text-5xl font-bold text-yellow-400">
-                  ${room.hourlyRate}
+                  $
+                  {room.hourlyRate}
 
                   <span className="text-lg text-gray-400">
                     {" "}
@@ -363,12 +473,15 @@ export default function RoomDetailsPage() {
 
               {/* FORM */}
               <div className="space-y-5">
+                {/* DATE */}
                 <input
                   type="date"
                   min={
                     new Date()
                       .toISOString()
-                      .split("T")[0]
+                      .split(
+                        "T"
+                      )[0]
                   }
                   value={date}
                   onChange={(e) =>
@@ -376,59 +489,85 @@ export default function RoomDetailsPage() {
                       e.target.value
                     )
                   }
-                  className="w-full bg-[#2a2d30] border border-[#444] rounded-xl p-4 outline-none focus:border-yellow-400"
+                  className="w-full bg-[#2a2d30] border border-[#444] rounded-xl p-4"
                 />
 
                 {/* TIME */}
                 <div className="grid grid-cols-2 gap-4">
+                  {/* START */}
                   <select
                     value={startTime}
                     onChange={(e) =>
                       setStartTime(
-                        e.target.value
+                        e.target
+                          .value
                       )
                     }
                     className="bg-[#2a2d30] border border-[#444] rounded-xl p-4"
                   >
                     {Array.from(
-                      { length: 13 },
-                      (_, i) => i + 8
-                    ).map((hour) => (
-                      <option
-                        key={hour}
-                        value={hour}
-                      >
-                        {hour}:00
-                      </option>
-                    ))}
+                      {
+                        length: 13,
+                      },
+                      (_, i) =>
+                        i + 8
+                    ).map(
+                      (hour) => (
+                        <option
+                          key={
+                            hour
+                          }
+                          value={`${hour}:00`}
+                        >
+                          {
+                            hour
+                          }
+                          :00
+                        </option>
+                      )
+                    )}
                   </select>
 
+                  {/* END */}
                   <select
                     value={endTime}
                     onChange={(e) =>
                       setEndTime(
-                        e.target.value
+                        e.target
+                          .value
                       )
                     }
                     className="bg-[#2a2d30] border border-[#444] rounded-xl p-4"
                   >
                     {Array.from(
-                      { length: 13 },
-                      (_, i) => i + 9
-                    ).map((hour) => (
-                      <option
-                        key={hour}
-                        value={hour}
-                        disabled={
-                          hour <=
-                          Number(
-                            startTime
-                          )
-                        }
-                      >
-                        {hour}:00
-                      </option>
-                    ))}
+                      {
+                        length: 13,
+                      },
+                      (_, i) =>
+                        i + 9
+                    ).map(
+                      (hour) => (
+                        <option
+                          key={
+                            hour
+                          }
+                          value={`${hour}:00`}
+                          disabled={
+                            hour <=
+                            Number(
+                              startTime.split(
+                                ":"
+                              )[0]
+                            )
+                          }
+                        >
+                          {
+                            hour
+                          }
+                          :00
+                        </option>
+                      )
+                    )}
                   </select>
                 </div>
 
@@ -453,60 +592,64 @@ export default function RoomDetailsPage() {
                   </p>
 
                   <h3 className="text-3xl font-bold text-yellow-400">
-                    ${totalCost}
+                    $
+                    {totalCost}
                   </h3>
                 </div>
               </div>
 
-
-              {/* BUTTON */}
+              {/* BOOK BUTTON */}
               <button
-                onClick={handleBooking}
+                onClick={
+                  handleBooking
+                }
                 disabled={
                   bookingLoading
                 }
-                className="w-full mt-8 bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-4 rounded-2xl transition-all disabled:opacity-50"
+                className="w-full mt-8 bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-4 rounded-2xl transition disabled:opacity-50"
               >
-                {bookingLoading
-                  ? "Processing..."
-                  : "Secure This Space"}
+                {currentUser
+                  ? bookingLoading
+                    ? "Processing..."
+                    : "Book Now"
+                  : "Login to Book"}
               </button>
-
             </div>
           </div>
         </div>
       </div>
-      
+
+      {/* EDIT MODAL */}
+      {showEditModal && (
+        <EditRoomModal
+          room={room}
+          onClose={() =>
+            setShowEditModal(
+              false
+            )
+          }
+          onUpdated={fetchRoom}
+        />
+      )}
+
+      {/* DELETE MODAL */}
+      {showDeleteModal && (
+        <DeleteConfirmModal
+          roomId={room._id}
+          onClose={() =>
+            setShowDeleteModal(
+              false
+            )
+          }
+          onDeleted={() =>
+            router.push(
+              "/rooms"
+            )
+          }
+        />
+      )}
 
       <Footer />
     </div>
   );
 }
-      {/* {
-        showEditModal && (
-          <EditRoomModal
-            room={room}
-            onClose={() =>
-              setShowEditModal(false)
-            }
-            onUpdated={fetchRoom}
-          />
-        )
-      }
-
-      {/* DELETE MODAL */}
-      {/* {
-        showDeleteModal && (
-          <DeleteConfirmModal
-            roomId={room._id}
-            onClose={() =>
-              setShowDeleteModal(false)
-            }
-            onDeleted={() =>
-              router.push("/rooms")
-            }
-          />
-        )
-      } */} 
-
-    

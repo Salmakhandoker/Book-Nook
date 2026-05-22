@@ -8,226 +8,171 @@ export default function EditRoomModal({
   onClose,
   onUpdated,
 }) {
-
-  const [form, setForm] = useState({
-    roomName: room?.roomName || "",
-    image: room?.image || "",
-    description: room?.description || "",
-    hourlyRate: room?.hourlyRate || "",
-  });
-
   const [loading, setLoading] = useState(false);
 
-  /*
-  |--------------------------------------------------------------------------
-  | HANDLE INPUT CHANGE
-  |--------------------------------------------------------------------------
-  */
+  const [formData, setFormData] = useState({
+    roomName: room.roomName || "",
+    image: room.image || "",
+    hourlyRate: room.hourlyRate || "",
+    description: room.description || "",
+    floor: room.floor || "",
+    capacity: room.capacity || "",
+    amenities: room.amenities?.join(", ") || "",
+  });
+
   const handleChange = (e) => {
-
-    const { name, value } = e.target;
-
-    setForm((prev) => ({
-      ...prev,
-
-      [name]:
-        name === "hourlyRate"
-          ? Number(value)
-          : value,
-    }));
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | UPDATE ROOM
-  |--------------------------------------------------------------------------
-  */
-  const handleUpdate = async () => {
-
-    // VALIDATION
-    if (
-      !form.roomName ||
-      !form.image ||
-      !form.description ||
-      !form.hourlyRate
-    ) {
-      return toast.error(
-        "Please fill all required fields"
-      );
-    }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
     try {
-
       setLoading(true);
 
-      // GET LOGGED USER
-      const user = JSON.parse(
-        localStorage.getItem("user")
-      );
+      const updatedRoom = {
+        ...formData,
 
-      // API REQUEST
+        hourlyRate: Number(formData.hourlyRate),
+        capacity: Number(formData.capacity),
+
+        amenities: formData.amenities
+          .split(",")
+          .map((item) => item.trim())
+          .filter((item) => item !== ""),
+      };
+
       const res = await fetch(
-        `http://localhost:5000/api/rooms/${room._id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/rooms/${room._id}`,
         {
-          method: "PATCH",
-
+          method: "PUT",
           headers: {
             "Content-Type": "application/json",
           },
-
-          body: JSON.stringify({
-            ...form,
-            ownerEmail: user?.email,
-          }),
+          body: JSON.stringify(updatedRoom),
         }
       );
 
       const data = await res.json();
 
-      // SUCCESS
-      if (data.success) {
-
-        toast.success(
-          "Room updated successfully"
-        );
-
-        onUpdated?.();
-
-        onClose?.();
-
-      } else {
-
-        toast.error(
+      if (!res.ok) {
+        return toast.error(
           data.message || "Update failed"
         );
       }
 
+      toast.success("Room updated successfully");
+
+      onUpdated?.();
+      onClose();
     } catch (error) {
-
       console.log(error);
-
       toast.error("Server error");
-
     } finally {
-
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center px-4">
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
 
-      <div className="w-full max-w-lg bg-[#1c211e] border border-yellow-500/20 rounded-2xl p-6 space-y-5">
+      <div className="w-full max-w-2xl bg-[#1c211e] border border-[#4f4633]/20 rounded-2xl p-8">
 
-        {/* TITLE */}
-        <div>
-
-          <h2 className="text-2xl font-bold text-yellow-400">
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="text-3xl font-bold text-white">
             Edit Room
           </h2>
 
-          <p className="text-gray-400 text-sm mt-1">
-            Update your room information
-          </p>
-
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-white text-2xl"
+          >
+            ✕
+          </button>
         </div>
 
-        {/* ROOM NAME */}
-        <div className="space-y-2">
-
-          <label className="text-sm text-gray-300">
-            Room Name
-          </label>
+        <form onSubmit={handleSubmit} className="space-y-5">
 
           <input
-            type="text"
             name="roomName"
-            value={form.roomName}
+            value={formData.roomName}
             onChange={handleChange}
-            placeholder="Enter room name"
-            className="w-full p-3 rounded-xl bg-black text-white border border-gray-700 focus:outline-none focus:border-yellow-500"
+            className="w-full bg-[#2a2d30] border border-[#444] rounded-xl p-4 text-white"
           />
-
-        </div>
-
-        {/* IMAGE URL */}
-        <div className="space-y-2">
-
-          <label className="text-sm text-gray-300">
-            Image URL
-          </label>
 
           <input
-            type="text"
             name="image"
-            value={form.image}
+            value={formData.image}
             onChange={handleChange}
-            placeholder="Enter image URL"
-            className="w-full p-3 rounded-xl bg-black text-white border border-gray-700 focus:outline-none focus:border-yellow-500"
+            className="w-full bg-[#2a2d30] border border-[#444] rounded-xl p-4 text-white"
           />
 
-        </div>
+          <div className="grid grid-cols-2 gap-4">
 
-        {/* DESCRIPTION */}
-        <div className="space-y-2">
+            <input
+              name="hourlyRate"
+              value={formData.hourlyRate}
+              onChange={handleChange}
+              type="number"
+              className="w-full bg-[#2a2d30] border border-[#444] rounded-xl p-4 text-white"
+            />
 
-          <label className="text-sm text-gray-300">
-            Description
-          </label>
+            <input
+              name="capacity"
+              value={formData.capacity}
+              onChange={handleChange}
+              type="number"
+              className="w-full bg-[#2a2d30] border border-[#444] rounded-xl p-4 text-white"
+            />
+
+          </div>
+
+          <input
+            name="floor"
+            value={formData.floor}
+            onChange={handleChange}
+            className="w-full bg-[#2a2d30] border border-[#444] rounded-xl p-4 text-white"
+          />
+
+          <input
+            name="amenities"
+            value={formData.amenities}
+            onChange={handleChange}
+            className="w-full bg-[#2a2d30] border border-[#444] rounded-xl p-4 text-white"
+          />
 
           <textarea
             name="description"
-            value={form.description}
+            value={formData.description}
             onChange={handleChange}
-            rows={4}
-            placeholder="Enter room description"
-            className="w-full p-3 rounded-xl bg-black text-white border border-gray-700 focus:outline-none focus:border-yellow-500"
+            rows={5}
+            className="w-full bg-[#2a2d30] border border-[#444] rounded-xl p-4 text-white resize-none"
           />
 
-        </div>
+          <div className="flex gap-4 pt-4">
 
-        {/* HOURLY RATE */}
-        <div className="space-y-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-4 rounded-xl border border-gray-700 text-gray-300 hover:bg-gray-800"
+            >
+              Cancel
+            </button>
 
-          <label className="text-sm text-gray-300">
-            Hourly Rate
-          </label>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 py-4 rounded-xl bg-yellow-400 text-black font-bold"
+            >
+              {loading ? "Updating..." : "Update Room"}
+            </button>
 
-          <input
-            type="number"
-            name="hourlyRate"
-            value={form.hourlyRate}
-            onChange={handleChange}
-            placeholder="Enter hourly rate"
-            className="w-full p-3 rounded-xl bg-black text-white border border-gray-700 focus:outline-none focus:border-yellow-500"
-          />
+          </div>
 
-        </div>
-
-        {/* BUTTONS */}
-        <div className="flex gap-4 pt-2">
-
-          <button
-            onClick={onClose}
-            disabled={loading}
-            className="flex-1 py-3 rounded-xl bg-gray-700 hover:bg-gray-600 text-white font-semibold transition"
-          >
-            Cancel
-          </button>
-
-          <button
-            onClick={handleUpdate}
-            disabled={loading}
-            className="flex-1 py-3 rounded-xl bg-yellow-500 hover:bg-yellow-400 text-black font-bold transition disabled:opacity-50"
-          >
-            {
-              loading
-                ? "Updating..."
-                : "Update Room"
-            }
-          </button>
-
-        </div>
+        </form>
 
       </div>
 
