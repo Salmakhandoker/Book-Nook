@@ -1,12 +1,9 @@
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
-
 import clientPromise from "./dbConnect";
 
-const client = await clientPromise;
-
 export const auth = betterAuth({
-  database: mongodbAdapter(client.db("studynook")),
+  database: mongodbAdapter(clientPromise.then(c => c.db("studynook"))),
 
   emailAndPassword: {
     enabled: true,
@@ -19,10 +16,36 @@ export const auth = betterAuth({
     },
   },
 
-  trustedOrigins: [
-    "http://localhost:3000",
-  ],
+  trustedOrigins: ["http://localhost:3000"],
 });
+
+
+
+// import { betterAuth } from "better-auth";
+// import { mongodbAdapter } from "better-auth/adapters/mongodb";
+
+// import clientPromise from "./dbConnect";
+
+// const client = await clientPromise;
+
+// export const auth = betterAuth({
+//   database: mongodbAdapter(client.db("studynook")),
+
+//   emailAndPassword: {
+//     enabled: true,
+//   },
+
+//   socialProviders: {
+//     google: {
+//       clientId: process.env.GOOGLE_CLIENT_ID,
+//       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+//     },
+//   },
+
+//   trustedOrigins: [
+//     "http://localhost:3000",
+//   ],
+// });
 
 // import { betterAuth } from "better-auth"
 // import { mongodbAdapter } from "better-auth/adapters/mongodb"

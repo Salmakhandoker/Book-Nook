@@ -126,15 +126,17 @@ export default function RoomDetailsPage() {
   ==========================================
   */
 
-  const isOwner =
-    currentUser?.email?.toLowerCase() ===
-    room?.ownerEmail?.toLowerCase();
+  // 
+ const isOwner = useMemo(() => {
+  if (!currentUser || !room) return false;
+  if (!currentUser.email || !room.ownerEmail) return false;
 
-  /*
-  ==========================================
-  TOTAL COST
-  ==========================================
-  */
+  return (
+    currentUser.email.trim().toLowerCase() ===
+    room.ownerEmail.trim().toLowerCase()
+  );
+}, [currentUser, room]);
+
 
   const totalCost = useMemo(() => {
     if (!room) return 0;

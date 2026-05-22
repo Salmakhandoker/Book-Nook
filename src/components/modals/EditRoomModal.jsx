@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 
 export default function EditRoomModal({
@@ -9,6 +9,15 @@ export default function EditRoomModal({
   onUpdated,
 }) {
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState(null);
+
+  // ✅ GET SESSION USER (SAFE WAY)
+  useEffect(() => {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/get-session`)
+      .then((res) => res.json())
+      .then((data) => setUser(data?.user || null))
+      .catch(() => setUser(null));
+  }, []);
 
   const [formData, setFormData] = useState({
     roomName: room.roomName || "",
@@ -21,10 +30,10 @@ export default function EditRoomModal({
   });
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
+    setFormData((prev) => ({
+      ...prev,
       [e.target.name]: e.target.value,
-    });
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -33,22 +42,39 @@ export default function EditRoomModal({
     try {
       setLoading(true);
 
+      // ❌ NOT LOGGED IN
+      if (!user) {
+        return toast.error("Please login first");
+      }
+
+      // ❌ NOT OWNER
+      if (user.email !== room.ownerEmail) {
+        return toast.error("You are not allowed");
+      }
+
       const updatedRoom = {
-        ...formData,
+        ownerEmail: user.email,
+
+        roomName: formData.roomName,
+        image: formData.image,
+        floor: formData.floor,
+        description: formData.description,
 
         hourlyRate: Number(formData.hourlyRate),
         capacity: Number(formData.capacity),
 
         amenities: formData.amenities
-          .split(",")
-          .map((item) => item.trim())
-          .filter((item) => item !== ""),
+          ? formData.amenities
+              .split(",")
+              .map((i) => i.trim())
+              .filter(Boolean)
+          : [],
       };
 
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/rooms/${room._id}`,
         {
-          method: "PUT",
+          method: "PATCH",
           headers: {
             "Content-Type": "application/json",
           },
@@ -58,10 +84,8 @@ export default function EditRoomModal({
 
       const data = await res.json();
 
-      if (!res.ok) {
-        return toast.error(
-          data.message || "Update failed"
-        );
+      if (!res.ok || !data.success) {
+        return toast.error(data.message || "Update failed");
       }
 
       toast.success("Room updated successfully");
@@ -77,55 +101,51 @@ export default function EditRoomModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+      <div className="w-full max-w-2xl bg-[#1c211e] rounded-2xl p-8">
 
-      <div className="w-full max-w-2xl bg-[#1c211e] border border-[#4f4633]/20 rounded-2xl p-8">
-
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-3xl font-bold text-white">
+        <div className="flex justify-between mb-6">
+          <h2 className="text-2xl font-bold text-white">
             Edit Room
           </h2>
 
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-white text-2xl"
-          >
+          <button onClick={onClose} className="text-white">
             ✕
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-4">
 
           <input
             name="roomName"
             value={formData.roomName}
             onChange={handleChange}
-            className="w-full bg-[#2a2d30] border border-[#444] rounded-xl p-4 text-white"
+            className="w-full p-3 rounded bg-gray-800 text-white"
           />
 
           <input
             name="image"
             value={formData.image}
             onChange={handleChange}
-            className="w-full bg-[#2a2d30] border border-[#444] rounded-xl p-4 text-white"
+            className="w-full p-3 rounded bg-gray-800 text-white"
           />
 
           <div className="grid grid-cols-2 gap-4">
 
             <input
               name="hourlyRate"
+              type="number"
               value={formData.hourlyRate}
               onChange={handleChange}
-              type="number"
-              className="w-full bg-[#2a2d30] border border-[#444] rounded-xl p-4 text-white"
+              className="w-full p-3 rounded bg-gray-800 text-white"
             />
 
             <input
               name="capacity"
+              type="number"
               value={formData.capacity}
               onChange={handleChange}
-              type="number"
-              className="w-full bg-[#2a2d30] border border-[#444] rounded-xl p-4 text-white"
+              className="w-full p-3 rounded bg-gray-800 text-white"
             />
 
           </div>
@@ -134,14 +154,14 @@ export default function EditRoomModal({
             name="floor"
             value={formData.floor}
             onChange={handleChange}
-            className="w-full bg-[#2a2d30] border border-[#444] rounded-xl p-4 text-white"
+            className="w-full p-3 rounded bg-gray-800 text-white"
           />
 
           <input
             name="amenities"
             value={formData.amenities}
             onChange={handleChange}
-            className="w-full bg-[#2a2d30] border border-[#444] rounded-xl p-4 text-white"
+            className="w-full p-3 rounded bg-gray-800 text-white"
           />
 
           <textarea
@@ -149,7 +169,7 @@ export default function EditRoomModal({
             value={formData.description}
             onChange={handleChange}
             rows={5}
-            className="w-full bg-[#2a2d30] border border-[#444] rounded-xl p-4 text-white resize-none"
+            className="w-full p-3 rounded bg-gray-800 text-white"
           />
 
           <div className="flex gap-4 pt-4">
@@ -157,7 +177,7 @@ export default function EditRoomModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-4 rounded-xl border border-gray-700 text-gray-300 hover:bg-gray-800"
+              className="flex-1 py-3 rounded border text-white"
             >
               Cancel
             </button>
@@ -165,9 +185,9 @@ export default function EditRoomModal({
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 py-4 rounded-xl bg-yellow-400 text-black font-bold"
+              className="flex-1 py-3 rounded bg-yellow-400 font-bold"
             >
-              {loading ? "Updating..." : "Update Room"}
+              {loading ? "Updating..." : "Update"}
             </button>
 
           </div>
@@ -175,7 +195,6 @@ export default function EditRoomModal({
         </form>
 
       </div>
-
     </div>
   );
 }

@@ -1,102 +1,82 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
 import RoomCard from "../rooms/RoomCard";
 
 export default function LatestRooms() {
-
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/rooms`
+        );
 
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/rooms/latest`)
-      .then((res) => res.json())
-      .then((data) => {
+        const data = await res.json();
 
-        console.log(data);
-
-        // SAFE ARRAY CHECK
+        // TAKE ONLY LATEST 6 ROOMS (CLIENT SIDE)
         if (Array.isArray(data)) {
-          setRooms(data);
-        }
+          const latest = data
+            .sort(
+              (a, b) =>
+                new Date(b.createdAt) -
+                new Date(a.createdAt)
+            )
+            .slice(0, 6);
 
-        else if (Array.isArray(data.rooms)) {
-          setRooms(data.rooms);
-        }
-
-        else {
+          setRooms(latest);
+        } else {
           setRooms([]);
         }
-
-        setLoading(false);
-      })
-
-      .catch((err) => {
-        console.log(err);
+      } catch (error) {
+        console.log(error);
         setRooms([]);
+      } finally {
         setLoading(false);
-      });
+      }
+    };
 
+    fetchRooms();
   }, []);
 
   return (
     <section className="py-24">
-
       <div className="max-w-7xl mx-auto px-6">
 
         {/* HEADER */}
-        <div className="flex justify-between items-center mb-14">
+        <div className="mb-14">
+          <p className="text-yellow-400 mb-3">
+            Recently Added
+          </p>
 
-          <div>
-
-            <p className="text-yellow-400 mb-3">
-              Recently Added
-            </p>
-
-            <h2 className="text-5xl font-bold text-white">
-              Available Study Rooms
-            </h2>
-
-          </div>
-
+          <h2 className="text-5xl font-bold text-white">
+            Available Study Rooms
+          </h2>
         </div>
 
         {/* LOADING */}
-        {
-          loading && (
-            <div className="text-center text-yellow-400">
-              Loading rooms...
-            </div>
-          )
-        }
+        {loading && (
+          <div className="text-center text-yellow-400">
+            Loading rooms...
+          </div>
+        )}
 
         {/* EMPTY */}
-        {
-          !loading && rooms.length === 0 && (
-            <div className="text-center text-gray-400">
-              No rooms found
-            </div>
-          )
-        }
+        {!loading && rooms.length === 0 && (
+          <div className="text-center text-gray-400">
+            No rooms found
+          </div>
+        )}
 
         {/* ROOMS */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-
-          {
-            rooms.map((room) => (
-              <RoomCard
-                key={room._id}
-                room={room}
-              />
-            ))
-          }
-
+          {rooms.map((room) => (
+            <RoomCard key={room._id} room={room} />
+          ))}
         </div>
-
       </div>
-
     </section>
   );
 }
