@@ -69,12 +69,12 @@ export default function Navbar() {
                 Add Room
               </Link>
 
-              {/* <Link
+              <Link
                 href="/my-listings"
                 className="hover:text-yellow-400 transition"
               >
                 My Listings
-              </Link> */}
+              </Link>
 
               <Link
                 href="/my-bookings"
