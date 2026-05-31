@@ -1,5 +1,6 @@
 "use client";
 
+import { authClient } from "@/lib/auth-client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -11,15 +12,14 @@ export default function RegisterPage() {
   const [form, setForm] = useState({
     name: "",
     email: "",
-    photo: "",
+    image: "",
     password: "",
   });
 
   const [error, setError] = useState("");
-
   const [loading, setLoading] = useState(false);
 
-  // HANDLE INPUT
+  // INPUT CHANGE
   const handleChange = (e) => {
     setForm({
       ...form,
@@ -32,15 +32,12 @@ export default function RegisterPage() {
     if (password.length < 6) {
       return "Password must be at least 6 characters";
     }
-
     if (!/[A-Z]/.test(password)) {
       return "Password must contain one uppercase letter";
     }
-
     if (!/[a-z]/.test(password)) {
       return "Password must contain one lowercase letter";
     }
-
     return "";
   };
 
@@ -48,10 +45,7 @@ export default function RegisterPage() {
   const handleRegister = async (e) => {
     e.preventDefault();
 
-    const validationError = validatePassword(
-      form.password
-    );
-
+    const validationError = validatePassword(form.password);
     if (validationError) {
       setError(validationError);
       return;
@@ -62,43 +56,32 @@ export default function RegisterPage() {
     try {
       setLoading(true);
 
-      const res = await fetch(
-        "http://localhost:5000/api/auth/signup",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(form),
-        }
-      );
+      // ✅ FIXED: better-auth { data, error } return করে, .json() না
+      const { data, error } = await authClient.signUp.email({
+        email: form.email,
+        password: form.password,
+        name: form.name,
+        image: form.image,
+      });
 
-      const data = await res.json();
-
-      if (data.success) {
-        toast.success(
-          "Registration successful! Please login."
-        );
-
-        router.push("/login");
-      } else {
-        toast.error(data.message || "Signup failed");
+      if (error) {
+        toast.error(error.message || "Signup failed");
+        return;
       }
-    } catch (error) {
-      toast.error("Server error");
+
+      toast.success("Registration successful!");
+      router.push("/login");
+
+    } catch (err) {
+      console.log(err);
+      toast.error("Something went wrong");
     } finally {
       setLoading(false);
     }
   };
 
-  // GOOGLE REGISTER
-  const handleGoogleRegister = () => {
-    toast.success("Google Login Coming Soon");
-  };
-
   return (
     <div className="min-h-screen bg-[#0f1412] flex items-center justify-center px-4">
-
       <div className="w-full max-w-md bg-[#1c211e] p-8 rounded-2xl border border-yellow-500/20">
 
         <h1 className="text-3xl font-bold text-yellow-400 mb-6 text-center">
@@ -107,6 +90,7 @@ export default function RegisterPage() {
 
         <form onSubmit={handleRegister} className="space-y-4">
 
+          {/* NAME */}
           <input
             type="text"
             name="name"
@@ -114,9 +98,10 @@ export default function RegisterPage() {
             placeholder="Name"
             value={form.name}
             onChange={handleChange}
-            className="w-full p-3 rounded-lg bg-black text-white border border-gray-700"
+            className="w-full p-3 rounded-lg bg-black text-white border border-gray-700 outline-none"
           />
 
+          {/* EMAIL */}
           <input
             type="email"
             name="email"
@@ -124,19 +109,20 @@ export default function RegisterPage() {
             placeholder="Email"
             value={form.email}
             onChange={handleChange}
-            className="w-full p-3 rounded-lg bg-black text-white border border-gray-700"
+            className="w-full p-3 rounded-lg bg-black text-white border border-gray-700 outline-none"
           />
 
+          {/* IMAGE */}
           <input
             type="text"
-            name="photo"
-            required
-            placeholder="Photo URL"
-            value={form.photo}
+            name="image"
+            placeholder="Photo URL (optional)"
+            value={form.image}
             onChange={handleChange}
-            className="w-full p-3 rounded-lg bg-black text-white border border-gray-700"
+            className="w-full p-3 rounded-lg bg-black text-white border border-gray-700 outline-none"
           />
 
+          {/* PASSWORD */}
           <input
             type="password"
             name="password"
@@ -144,48 +130,34 @@ export default function RegisterPage() {
             placeholder="Password"
             value={form.password}
             onChange={handleChange}
-            className="w-full p-3 rounded-lg bg-black text-white border border-gray-700"
+            className="w-full p-3 rounded-lg bg-black text-white border border-gray-700 outline-none"
           />
 
           {/* ERROR */}
           {error && (
-            <p className="text-red-400 text-sm">
-              {error}
-            </p>
+            <p className="text-red-400 text-sm">{error}</p>
           )}
 
+          {/* BUTTON */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-yellow-500 hover:bg-yellow-400 text-black py-3 rounded-lg font-bold"
+            className="w-full bg-yellow-500 hover:bg-yellow-400 text-black py-3 rounded-lg font-bold transition"
           >
             {loading ? "Registering..." : "Register"}
           </button>
 
         </form>
 
-        {/* GOOGLE */}
-        <button
-          onClick={handleGoogleRegister}
-          className="w-full mt-4 border border-yellow-500 text-yellow-400 py-3 rounded-lg"
-        >
-          signup with Google
-        </button>
-
-        {/* LOGIN */}
+        {/* LOGIN LINK */}
         <p className="text-gray-400 text-center mt-6">
           Already have an account?{" "}
-
-          <Link
-            href="/login"
-            className="text-yellow-400 hover:underline"
-          >
+          <Link href="/login" className="text-yellow-400 hover:underline">
             Login
           </Link>
         </p>
 
       </div>
-
     </div>
   );
 }

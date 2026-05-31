@@ -1,24 +1,19 @@
-import { betterAuth } from "better-auth";
-import { mongodbAdapter } from "better-auth/adapters/mongodb";
-import clientPromise from "./dbConnect";
+// import { betterAuth } from "better-auth";
+// import { mongodbAdapter } from "better-auth/adapters/mongodb";
+// import { connectDB } from "./mongodb";
 
-export const auth = betterAuth({
-  database: mongodbAdapter(clientPromise.then(c => c.db("studynook"))),
+// const db = await connectDB();
 
-  emailAndPassword: {
-    enabled: true,
-  },
+// export const auth = betterAuth({
+//   database: mongodbAdapter(db),
 
-  socialProviders: {
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    },
-  },
-
-  trustedOrigins: ["http://localhost:3000"],
-});
-
+//   socialProviders: {
+//     google: {
+//       clientId: process.env.GOOGLE_CLIENT_ID,
+//       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+//     },
+//   },
+// });
 
 
 // import { betterAuth } from "better-auth";
@@ -29,7 +24,7 @@ export const auth = betterAuth({
 // const client = await clientPromise;
 
 // export const auth = betterAuth({
-//   database: mongodbAdapter(client.db("studynook")),
+//   database: mongodbAdapter(client.db("studynookDB")),
 
 //   emailAndPassword: {
 //     enabled: true,
@@ -46,28 +41,25 @@ export const auth = betterAuth({
 //     "http://localhost:3000",
 //   ],
 // });
+import { betterAuth } from "better-auth";
+import { mongodbAdapter } from "better-auth/adapters/mongodb";
+import clientPromise from "./dbConnect";
 
-// import { betterAuth } from "better-auth"
-// import { mongodbAdapter } from "better-auth/adapters/mongodb"
-// import { MongoClient } from "mongodb"
-// const client = new MongoClient(process.env.MONGODB_URI);
-// const db = client.db("studyNookDB");
+const client = await clientPromise;
 
+export const auth = betterAuth({
+  database: mongodbAdapter(client.db()),
 
-// export const auth = betterAuth({
-//    database: mongodbAdapter(db,{
-//     client
-//    }),
-//    emailAndPassword: {
-//     enabled:true,
-//    },
-//     socialProviders: {
-//         google: { 
-//             clientId: process.env.GOOGLE_CLIENT_ID ,
-//             clientSecret: process.env.GOOGLE_CLIENT_SECRET  
-//         }, 
-//     },
-//       trustedOrigins: [
-//     "http://localhost:3000",
-//   ],
-// });
+  emailAndPassword: {
+    enabled: true,
+  },
+
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    },
+  },
+
+  trustedOrigins: ["http://localhost:3000"],
+});

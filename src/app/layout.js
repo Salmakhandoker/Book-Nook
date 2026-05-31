@@ -2,6 +2,8 @@ import "./globals.css";
 
 import { Toaster } from "react-hot-toast";
 
+import AuthProvider from "@/providers/AuthProvider";
+
 export const metadata = {
   title: {
     default: "StudyNook",
@@ -39,44 +41,50 @@ export default function RootLayout({ children }) {
       lang="en"
       className="dark scroll-smooth"
       suppressHydrationWarning
+      data-scroll-behavior="smooth"
     >
       <body className="bg-[#0f1412] text-[#dfe4e0] antialiased">
 
-        {/* APP CONTENT */}
-        <main>
-          {children}
-        </main>
+        {/* AUTH PROVIDER */}
+        <AuthProvider>
 
-        {/* TOAST */}
-        <Toaster
-          position="top-center"
-          toastOptions={{
-            duration: 3000,
+          {/* APP CONTENT */}
+          <main>
+            {children}
+          </main>
 
-            style: {
-              background: "#1c211e",
-              color: "#dfe4e0",
-              border:
-                "1px solid rgba(255, 193, 7, 0.2)",
-              padding: "16px",
-              borderRadius: "14px",
-            },
+          {/* TOAST */}
+          <Toaster
+            position="top-center"
+            toastOptions={{
+              duration: 3000,
 
-            success: {
-              iconTheme: {
-                primary: "#facc15",
-                secondary: "#0f1412",
+              style: {
+                background: "#1c211e",
+                color: "#dfe4e0",
+                border:
+                  "1px solid rgba(255, 193, 7, 0.2)",
+                padding: "16px",
+                borderRadius: "14px",
               },
-            },
 
-            error: {
-              iconTheme: {
-                primary: "#ef4444",
-                secondary: "#0f1412",
+              success: {
+                iconTheme: {
+                  primary: "#facc15",
+                  secondary: "#0f1412",
+                },
               },
-            },
-          }}
-        />
+
+              error: {
+                iconTheme: {
+                  primary: "#ef4444",
+                  secondary: "#0f1412",
+                },
+              },
+            }}
+          />
+
+        </AuthProvider>
 
       </body>
     </html>

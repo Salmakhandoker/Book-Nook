@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import toast from "react-hot-toast";
 
 export default function DeleteConfirmModal({
@@ -9,126 +9,82 @@ export default function DeleteConfirmModal({
   onClose,
   onDeleted,
 }) {
-  const [loading, setLoading] =
-    useState(false);
+  const [deleting, setDeleting] = useState(false);
 
-  const [user, setUser] =
-    useState(null);
-
-  // GET USER
-  useEffect(() => {
-    const storedUser =
-      localStorage.getItem("user");
-
-    if (storedUser) {
-      setUser(
-        JSON.parse(storedUser)
-      );
-    }
-  }, []);
-
+  /* ==========================================
+  BUG FIX #1 — ownerEmail sent as QUERY PARAM
+  HTTP DELETE requests often have their body stripped
+  by proxies/servers. Query param is always safe.
+  ========================================== */
   const handleDelete = async () => {
+    if (!roomOwnerEmail) {
+      toast.error("Owner email missing — cannot delete");
+      return;
+    }
+
     try {
-      setLoading(true);
+      setDeleting(true);
 
-      // NOT LOGIN
-      if (!user) {
-        toast.error(
-          "Please login first"
-        );
-        return;
-      }
-
-      // OWNER CHECK
-      if (
-        user.email
-          .trim()
-          .toLowerCase() !==
+      const url = `http://localhost:5000/api/rooms/${roomId}?ownerEmail=${encodeURIComponent(
         roomOwnerEmail
-          .trim()
-          .toLowerCase()
-      ) {
-        toast.error(
-          "You are not allowed"
-        );
-        return;
-      }
+      )}`;
 
-      const res = await fetch(
-        `http://localhost:5000/api/rooms/${roomId}`,
-        {
-          method: "DELETE",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-
-          body: JSON.stringify({
-            userEmail: user.email,
-          }),
-        }
-      );
+      const res = await fetch(url, {
+        method: "DELETE",
+      });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(
-          data.message ||
-            "Delete failed"
-        );
+        throw new Error(data.message || "Delete failed");
       }
 
-      toast.success(
-        "Room deleted successfully"
-      );
-
-      onDeleted?.();
-
-      onClose?.();
+      toast.success("Room deleted successfully!");
+      onDeleted();
     } catch (error) {
       toast.error(error.message);
     } finally {
-      setLoading(false);
+      setDeleting(false);
+      onClose();
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-[#1c211e] rounded-2xl p-8 text-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+      <div className="bg-[#1a1c1e] border border-[#333537] rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl">
 
-        <div className="text-5xl mb-4">
-          🗑️
+        {/* ICON */}
+        <div className="flex justify-center mb-6">
+          <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center text-3xl">
+            🗑️
+          </div>
         </div>
 
-        <h2 className="text-2xl font-bold text-white mb-2">
+        {/* TEXT */}
+        <h2 className="text-2xl font-bold text-white text-center mb-3">
           Delete Room?
         </h2>
-
-        <p className="text-gray-400 mb-6">
-          This action cannot be undone.
+        <p className="text-gray-400 text-center mb-8">
+          This action is permanent. The room and all its bookings will be
+          deleted and cannot be recovered.
         </p>
 
-        <div className="grid grid-cols-2 gap-4">
-
+        {/* BUTTONS */}
+        <div className="flex gap-4">
           <button
             onClick={onClose}
-            disabled={loading}
-            className="py-3 rounded-xl border border-gray-600 text-gray-300"
+            disabled={deleting}
+            className="flex-1 bg-[#2a2d30] hover:bg-[#333537] text-white font-bold py-3 rounded-xl transition disabled:opacity-50"
           >
             Cancel
           </button>
-
           <button
             onClick={handleDelete}
-            disabled={loading}
-            className="py-3 rounded-xl bg-red-500 text-white font-bold"
+            disabled={deleting}
+            className="flex-1 bg-red-500 hover:bg-red-400 text-white font-bold py-3 rounded-xl transition disabled:opacity-50"
           >
-            {loading
-              ? "Deleting..."
-              : "Delete"}
+            {deleting ? "Deleting..." : "Yes, Delete"}
           </button>
-
         </div>
 
       </div>

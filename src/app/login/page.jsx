@@ -16,12 +16,12 @@ export default function LoginPage() {
 
   const [loading, setLoading] = useState(false);
 
-  // HANDLE INPUT
+  // INPUT HANDLER
   const handleChange = (e) => {
-    setForm({
-      ...form,
+    setForm((prev) => ({
+      ...prev,
       [e.target.name]: e.target.value,
-    });
+    }));
   };
 
   // LOGIN
@@ -31,61 +31,43 @@ export default function LoginPage() {
     try {
       setLoading(true);
 
-      const res = await fetch(
-        "http://localhost:5000/api/auth/signin",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(form),
-        }
-      );
+      // ✅ FIXED: better-auth { data, error } return করে, .json() না
+      const { data, error } = await authClient.signIn.email({
+        email: form.email,
+        password: form.password,
+      });
 
-      const data = await res.json();
-
-      if (data.success) {
-        // SAVE USER
-        localStorage.setItem(
-          "user",
-          JSON.stringify(data.user)
-        );
-
-        toast.success("Login successful");
-
-        router.push("/");
-      } else {
-        toast.error(
-          data.message || "Invalid email or password"
-        );
+      if (error) {
+        toast.error(error.message || "Login failed");
+        return;
       }
-    } catch (error) {
-      toast.error("Server error");
+
+      toast.success("Login successful!");
+      router.push("/");
+
+    } catch (err) {
+      console.log(err);
+      toast.error("Something went wrong");
     } finally {
       setLoading(false);
     }
   };
 
   // GOOGLE LOGIN
-  // const handleGoogleLogin = async () => {
-  //   await authClient.logIn.social({
-  //     provider: "google"
-  //   })
-  // };
   const handleGoogleLogin = async () => {
-  try {
-    await authClient.signIn.social({
-      provider: "google",
-      callbackURL: "/",
-    });
-  } catch (error) {
-    toast.error("Google login failed");
-  }
-};
+    try {
+      await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/",
+      });
+    } catch (err) {
+      console.log(err);
+      toast.error("Google login failed");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#0f1412] flex items-center justify-center px-4">
-
       <div className="w-full max-w-md bg-[#1c211e] p-8 rounded-2xl border border-yellow-500/20">
 
         <h1 className="text-3xl font-bold text-yellow-400 mb-6 text-center">
@@ -94,6 +76,7 @@ export default function LoginPage() {
 
         <form onSubmit={handleLogin} className="space-y-4">
 
+          {/* EMAIL */}
           <input
             type="email"
             name="email"
@@ -101,51 +84,49 @@ export default function LoginPage() {
             placeholder="Email"
             value={form.email}
             onChange={handleChange}
-            className="w-full p-3 rounded-lg bg-black text-white border border-gray-700"
+            className="w-full p-3 rounded-lg bg-black text-white border border-gray-700 outline-none"
           />
 
+          {/* PASSWORD */}
           <input
             type="password"
             name="password"
             required
             placeholder="Password"
+            autoComplete="current-password"
             value={form.password}
             onChange={handleChange}
-            className="w-full p-3 rounded-lg bg-black text-white border border-gray-700"
+            className="w-full p-3 rounded-lg bg-black text-white border border-gray-700 outline-none"
           />
 
+          {/* BUTTON */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-yellow-500 hover:bg-yellow-400 text-black py-3 rounded-lg font-bold"
+            className="w-full bg-yellow-500 hover:bg-yellow-400 text-black py-3 rounded-lg font-bold transition"
           >
             {loading ? "Logging in..." : "Login"}
           </button>
 
         </form>
 
-        {/* GOOGLE */}
+        {/* GOOGLE LOGIN */}
         <button
           onClick={handleGoogleLogin}
-          className="w-full mt-4 border border-yellow-500 text-yellow-400 py-3 rounded-lg"
+          className="w-full mt-4 border border-yellow-500 text-yellow-400 py-3 rounded-lg hover:bg-yellow-500 hover:text-black transition"
         >
-         signin with Google
+          Sign in with Google
         </button>
 
-        {/* REGISTER */}
+        {/* REGISTER LINK */}
         <p className="text-gray-400 text-center mt-6">
           Don&apos;t have an account?{" "}
-
-          <Link
-            href="/register"
-            className="text-yellow-400 hover:underline"
-          >
+          <Link href="/register" className="text-yellow-400 hover:underline">
             Register
           </Link>
         </p>
 
       </div>
-
     </div>
   );
 }
