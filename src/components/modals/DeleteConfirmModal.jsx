@@ -25,7 +25,7 @@ export default function DeleteConfirmModal({
     try {
       setDeleting(true);
 
-      const url = `http://localhost:5000/api/rooms/${roomId}?ownerEmail=${encodeURIComponent(
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/api/rooms/${roomId}?ownerEmail=${encodeURIComponent(
         roomOwnerEmail
       )}`;
 

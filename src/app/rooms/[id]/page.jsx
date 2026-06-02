@@ -46,7 +46,7 @@ export default function RoomDetailsPage() {
     try {
       setLoading(true);
 
-      const res = await fetch(`http://localhost:5000/api/rooms/${id}`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/rooms/${id}`);
 
       const data = await res.json();
 
@@ -143,7 +143,7 @@ export default function RoomDetailsPage() {
         userEmail: currentUser.email,
       };
 
-      const res = await fetch("http://localhost:5000/api/bookings", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/bookings  `, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

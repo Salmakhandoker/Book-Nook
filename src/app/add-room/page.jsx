@@ -45,7 +45,7 @@ export default function AddRoomPage() {
     try {
 
       const res = await fetch(
-        "http://localhost:5000/api/rooms",
+          `${process.env.NEXT_PUBLIC_API_URL}api/rooms  `,
         {
           method: "POST",
 
