@@ -187,8 +187,8 @@ Fully responsive across all devices:
 ## 👨‍💻 Author
 
 **Your Name**
-- GitHub: [@your-username](https://github.com/your-username)
-- Email: your@email.com
+- GitHub: [Salmakhandoker](https://github.com/salmakhandoker)
+- Email: Salmakhandoker001@email.com
 
 ---
 

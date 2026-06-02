@@ -9,7 +9,7 @@ import EditRoomModal from "@/components/modals/EditRoomModal";
 export default function MyListingsPage() {
   const router = useRouter();
 
-  // ✅ Better Auth এর useSession ব্যবহার করুন
+  // ✅ Better Auth এর useSession
   const { data: session, isPending: authLoading } = authClient.useSession();
   const currentUser = session?.user;
 
@@ -183,7 +183,7 @@ export default function MyListingsPage() {
                     >
                       ✏️ Edit
                     </button>
-                    {/* ✅ confirm() সরানো হয়েছে, modal ব্যবহার করা হচ্ছে */}
+                    {/* ✅ confirm()  */}
                     <button
                       onClick={() => setDeletingRoom(room)}
                       className="flex-1 bg-red-500/10 hover:bg-red-500 border border-red-500/40 hover:border-red-500 text-red-400 hover:text-white font-bold py-3 rounded-xl transition text-sm"

@@ -86,7 +86,7 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* RIGHT SIDE */}
+        {}
         <div className="flex items-center gap-4">
 
           {loading ? (
